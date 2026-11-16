@@ -21,21 +21,21 @@ public:
 
     static constexpr int RESPONSE_SIZE = 122; // Размер посылки в байтах
     static constexpr int ADDRESS_PAUSE_MS = 100; // Пауза после отправки адреса
-    static constexpr int FIRST_BYTE_TIMEOUT = 4000; // Таймаут ожидания первого байта, иначе нет ответа от платы
-    static constexpr int FRAME_TIMEOUT = 1000; // Досылка оставшихся байт после получения первого
+    static constexpr int FIRST_BYTE_TIMEOUT_MS = 4000; // Таймаут ожидания первого байта, иначе нет ответа от платы
+    static constexpr int FRAME_TIMEOUT_MS = 1000; // Досылка оставшихся байт после получения первого
 
 signals:
     void frameReceived(const QByteArray &frame); // несёт в себе полученные 122 байта из платы
     void responseTimeout(); // таймаут если если за заданное время данные из платы не получены
     void portError(const QString &text); // несёт в себе текст ошибки
-    void byteSend(const QByteArray &data); // что ушло в порт для журнала
+    void bytesSend(const QByteArray &data); // что ушло в порт для журнала
     void bytesReceived(const QByteArray &data); // что принято из порта для журнала
 
 private:
     /*Класс перечисления состояний порта*/
     enum class State{
         Closed, // закрыт
-        Idle, // занят
+        Idle, // свободен
         Sending, // идёт отправка
         WaitingFirstByte, // ждём первый байт ответа
         Receiving // получение
