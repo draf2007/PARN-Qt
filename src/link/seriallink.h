@@ -28,7 +28,7 @@ signals:
     void frameReceived(const QByteArray &frame); // несёт в себе полученные 122 байта из платы
     void responseTimeout(); // таймаут если если за заданное время данные из платы не получены
     void portError(const QString &text); // несёт в себе текст ошибки
-    void bytesSend(const QByteArray &data); // что ушло в порт для журнала
+    void bytesSent(const QByteArray &data); // что ушло в порт для журнала
     void bytesReceived(const QByteArray &data); // что принято из порта для журнала
 
 private:
