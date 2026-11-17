@@ -27,7 +27,7 @@ bool SerialLink::open(const QString &portName) // метод настройки 
     if (!m_port.open(QIODevice::ReadWrite)) { // если не смогли открыть
         switch (m_port.error()) {
         case QSerialPort::DeviceNotFoundError:
-            m_errorString = tr("Порт не найден. Проверте кабель USB.");
+            m_errorString = tr("Порт не найден. Проверьте кабель USB.");
             break;
         case QSerialPort::PermissionError:
             m_errorString = tr("Порт занят другой программой.");
@@ -36,6 +36,7 @@ bool SerialLink::open(const QString &portName) // метод настройки 
             m_errorString = m_port.errorString();
             break;
         }
+        return false;
     }
 
     /*если порт открылся,
