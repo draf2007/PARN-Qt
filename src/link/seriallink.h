@@ -26,7 +26,7 @@ public:
 
 signals:
     void frameReceived(const QByteArray &frame); // несёт в себе полученные 122 байта из платы
-    void responseTimeout(); // таймаут если если за заданное время данные из платы не получены
+    void responseTimeout(); // таймаут если за заданное время данные из платы не получены
     void portError(const QString &text); // несёт в себе текст ошибки
     void bytesSent(const QByteArray &data); // что ушло в порт для журнала
     void bytesReceived(const QByteArray &data); // что принято из порта для журнала
@@ -51,7 +51,7 @@ private:
     QByteArray m_buffer; // Буфер для накопления ответа
     State m_state = State::Closed; // Состояние порта(при запуске программы всегда Close)
     QString m_errorString; // Содержит в себе текст ошибки
-    QByteArray m_pendingBody; // тело кадра, которое ждёт окончание таймаута
+    QByteArray m_pendingBody; // тело кадра, ждёт конца паузы после адреса
 
 };
 

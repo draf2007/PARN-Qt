@@ -18,7 +18,7 @@ bool SerialLink::open(const QString &portName) // метод настройки 
 {
     // Проверка открыт ли уже порт, если открыт то закрываем
     if (m_port.isOpen()) {
-        close(); // метод закрытия нужен свой, что бы сбросить таймер и закрыть именно тот порт который открыт, иначе есть риск закрыть не тот порт
+        close(); // свой close() сбрасывает таймер, буфер и состояние
     }
     // Тут настраиваем порт
     m_port.setPortName(portName);
@@ -61,7 +61,7 @@ void SerialLink::close() // метод закрытия порта
     if (m_port.isOpen()) { // если порт открыт закрываем (защита от двойного закрытия)
         m_port.close();
     }
-    m_buffer.clear(); // чистим буфер приема/передачи
+    m_buffer.clear(); // чистим буфер приёма
     m_state = State::Closed; // выставляем состояние порта в Closed
 }
 
@@ -138,7 +138,7 @@ void SerialLink::onReadyRead()
         m_timer.start(FRAME_TIMEOUT_MS); // перезапускаем таймер на прием второй части ответа
     }
 
-    if (m_state != State::Receiving) { // если состояние Receiving значит ждём всторую часть ответа поэтому выходим
+    if (m_state != State::Receiving) { // байты, которых никто не ждал: в журнал уже ушли, выбрасываем
         return;
     }
 
