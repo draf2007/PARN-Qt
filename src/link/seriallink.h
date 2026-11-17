@@ -32,7 +32,7 @@ signals:
     void bytesReceived(const QByteArray &data); // что принято из порта для журнала
 
 private slots:
-    void onTimeout(); // слот срабатывает если ответ от платы не пришёл вовремя
+    void onTimeout(); // сработал таймер: кончилась пауза после адреса или ответ не пришёл вовремя
     void onReadyRead(); // слот срабатывает когда в порту появились данные для чтения
     void onPortError(QSerialPort::SerialPortError error); // слот срабатывает если произошла ошибка(выдернули USB кабель)
 

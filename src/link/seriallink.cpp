@@ -6,7 +6,7 @@ SerialLink::SerialLink(QObject *parent)
     m_timer.setSingleShot(true);
     QObject::connect(&m_timer, &QTimer::timeout, this, &SerialLink::onTimeout);
     QObject::connect(&m_port, &QSerialPort::readyRead, this, &SerialLink::onReadyRead);
-    QObject::connect(&m_port, &QSerialPort::errorOccurred, this, &SerialLink::onPortErorr);
+    QObject::connect(&m_port, &QSerialPort::errorOccurred, this, &SerialLink::onPortError);
 }
 
 bool SerialLink::isOpen() const // метод проверяет открыт ли порт
@@ -130,39 +130,38 @@ void SerialLink::onTimeout() // сработал таймер: кончилас�
 
 void SerialLink::onReadyRead()
 {
-    const QByteArray data = m_port.readAll();
+    const QByteArray data = m_port.readAll(); // читаем всё что есть в порту
     emit bytesReceived(data);
 
-    if (m_state == State::WaitingFirstByte) {
-        m_state = State::Receiving;
-        m_timer.start(FRAME_TIMEOUT_MS);
+    if (m_state == State::WaitingFirstByte) { // если состояние WaitingFirstByte то это пришла первая часть ответа
+        m_state = State::Receiving; // переключаем состояние в ожидаем приём второй части ответа
+        m_timer.start(FRAME_TIMEOUT_MS); // перезапускаем таймер на прием второй части ответа
     }
 
-    if (m_state != State::Receiving) {
+    if (m_state != State::Receiving) { // если состояние Receiving значит ждём всторую часть ответа поэтому выходим
         return;
     }
 
-    m_buffer.append(data);
+    m_buffer.append(data); // дочитывем всё из буфера (склеиваем первую и вторую части ответа)
 
-    if (m_buffer.size()<RESPONSE_SIZE) {
+    if (m_buffer.size()<RESPONSE_SIZE) { // если размер буфера меньше 122 байт выходим
         return;
     }
-    m_timer.stop();
-    const QByteArray frame = m_buffer.left(RESPONSE_SIZE);
-    m_buffer.clear();
-    m_state = State::Idle;
-    emit frameReceived(frame);
+    m_timer.stop(); // останавливаем таймер
+    const QByteArray frame = m_buffer.left(RESPONSE_SIZE); // забираем из буфера 122 байта
+    m_buffer.clear(); // чистим буфер
+    m_state = State::Idle; // переключаем состояние порта в свободен
+    emit frameReceived(frame); // отправляем 122 байта
 }
 
-void SerialLink::onPortError(QSerialPort::SerialPortError error)
+void SerialLink::onPortError(QSerialPort::SerialPortError error) // метод обработки ошибок порта
 {
-    if (error == QSerialPort::NoError || m_state == State::Closed) {
+    if (error == QSerialPort::NoError || m_state == State::Closed) { //Qt иногда присылает «ошибку» NoError, а ошибки открытия обрабатывает сам open()
         return;
-    } else {
-        m_errorString = tr("Связь с портом потеряна");
-        close();
-        emit portError(m_errorString);
     }
+    m_errorString = tr("Связь с портом потеряна"); // иначе это сбой во время работы
+    close(); // закрываем порт
+    emit portError(m_errorString); // отправляем ошибку
 }
 
 
