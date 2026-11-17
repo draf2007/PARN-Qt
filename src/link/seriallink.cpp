@@ -104,7 +104,7 @@ bool SerialLink::sendFrame(quint8 address, const QByteArray &body) // метод
     return true;
 }
 
-void SerialLink::onTimeout() // метод проверяет m_state и в зависимости от того в каком State сработал таймер выполняет действие
+void SerialLink::onTimeout() // сработал таймер: кончилась пауза после адреса или ответ не пришёл вовремя
 {
     switch (m_state) {
     case State::Sending: // таймер сработал после отправки адреса
@@ -119,7 +119,7 @@ void SerialLink::onTimeout() // метод проверяет m_state и в за
     case State::Receiving: // в состоянии ожидания ответа от платы
         m_buffer.clear(); // чистим буфер приёма
         m_state = State::Idle; // меняем состояние порта на свободен
-        emit responseTimeout(); // ответ не пршёл вовремя -> по сигналу выдаём сообщение "Нет ответа."
+        emit responseTimeout(); // ответ не пришёл вовремя -> по сигналу выдаём сообщение "Нет ответа."
         break;
     /*На эти два состояния таймеры срабатывать не должны поэтому break*/
     case State::Closed:
@@ -154,7 +154,7 @@ void SerialLink::onReadyRead()
     emit frameReceived(frame);
 }
 
-void SerialLink::onPortErorr(QSerialPort::SerialPortError error)
+void SerialLink::onPortError(QSerialPort::SerialPortError error)
 {
     if (error == QSerialPort::NoError || m_state == State::Closed) {
         return;
