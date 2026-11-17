@@ -114,15 +114,14 @@ void SerialLink::onTimeout() // метод проверяет m_state и в за
         break;
     /*ниже два case - одно и тоже действие*/
     case State::WaitingFirstByte: // ждём первый байт
-    case State::Receiving: // в состоянийй ожидания ответа от платы
+    case State::Receiving: // в состояний ожидания ответа от платы
         m_buffer.clear(); // чистим буфер приёма
         m_state = State::Idle; // меняем состояние порта на свободен
-        emit responseTimeout(); // отправляем сигнал что ждём ответ от платы
+        emit responseTimeout(); // ответ не пршёл во время -> по сигналу выдаём сообщение "Нет ответа."
+        break;
     /*На эти два состояния таймеры срабатывать не должны поэтому break*/
     case State::Closed:
     case State::Idle:
-        break;
-    default:
         break;
     }
 }
