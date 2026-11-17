@@ -43,7 +43,7 @@ bool SerialLink::open(const QString &portName) // метод настройки 
     }
 
     /*если порт открылся,
-     * очищаем буфер приёма/передачи
+     * очищаем буфер приёма
      * очищаем буфер ошибок
      * состояние порта переключаем в Idle(свободен)*/
     m_buffer.clear();
@@ -91,7 +91,7 @@ bool SerialLink::sendFrame(quint8 address, const QByteArray &body) // метод
     if (m_state != State::Idle) {
         return false;
     }
-    m_buffer.clear(); // чистим буфер приёма/передачи
+    m_buffer.clear(); // чистим буфер приёма
     m_pendingBody = body; // сохраняем команду для отправки
     m_state = State::Sending; // выставляем состояние порта в Sending (отправка)
     m_port.setParity(QSerialPort::MarkParity); // меняем чётность согласно протоколу
@@ -102,9 +102,29 @@ bool SerialLink::sendFrame(quint8 address, const QByteArray &body) // метод
     return true;
 }
 
-void SerialLink::onTimeout()
+void SerialLink::onTimeout() // метод проверяет m_state и в зависимости от того в каком State сработал таймер выполняет действие
 {
-
+    switch (m_state) {
+    case State::Sending: // таймер сработал после отправки адреса
+        m_port.setParity(QSerialPort::SpaceParity); // переключаем чётность
+        m_port.write(m_pendingBody); // пишем тело запроса
+        emit bytesSent(m_pendingBody); // отправляем тело запроса в журнал
+        m_state = State::WaitingFirstByte; // меняем состояние на ожидаем получение первого байта
+        m_timer.start(FIRST_BYTE_TIMEOUT_MS); // запускаем таймер ожидания первого байта
+        break;
+    /*ниже два case - одно и тоже действие*/
+    case State::WaitingFirstByte: // ждём первый байт
+    case State::Receiving: // в состоянийй ожидания ответа от платы
+        m_buffer.clear(); // чистим буфер приёма
+        m_state = State::Idle; // меняем состояние порта на свободен
+        emit responseTimeout(); // отправляем сигнал что ждём ответ от платы
+    /*На эти два состояния таймеры срабатывать не должны поэтому break*/
+    case State::Closed:
+    case State::Idle:
+        break;
+    default:
+        break;
+    }
 }
 
 
