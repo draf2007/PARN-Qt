@@ -4,17 +4,18 @@ SerialLink::SerialLink(QObject *parent)
     : QObject{parent}
 {}
 
-bool SerialLink::isOpen() const {
-
+bool SerialLink::isOpen() const // метод проверяет открыт ли порт
+{
     return m_state != State::Closed;
 }
 
-bool SerialLink::open(const QString &portName){
-
+bool SerialLink::open(const QString &portName) // метод настройки и открытия порта
+{
+    // Проверка открыт ли уже порт, если открыт то закрываем
     if (m_port.isOpen()) {
-        m_port.close();
+        close(); // метод закрытия нужен свой, что бы сбросить таймер и закрыть именно тот порт который открыт, иначе есть риск закрыть не тот порт
     }
-
+    // Тут настраиваем порт
     m_port.setPortName(portName);
     m_port.setBaudRate(QSerialPort::Baud9600);
     m_port.setDataBits(QSerialPort::Data8);
@@ -22,57 +23,61 @@ bool SerialLink::open(const QString &portName){
     m_port.setStopBits(QSerialPort::OneStop);
     m_port.setFlowControl(QSerialPort::NoFlowControl);
 
-    if (m_port.open(QIODevice::ReadWrite)) {
-        m_buffer.clear();
-        m_errorString.clear();
-        m_state = State::Idle;
-    } else {
+    /*Пытаемся открыть порт*/
+    if (!m_port.open(QIODevice::ReadWrite)) { // если не смогли открыть
         switch (m_port.error()) {
         case QSerialPort::DeviceNotFoundError:
-            m_errorString = tr("Устройство не найденно!");
-            return false;
+            m_errorString = tr("Порт не найден. Проверте кабель USB.");
             break;
         case QSerialPort::PermissionError:
-            m_errorString = tr("Порт занят!");
-            return false;
+            m_errorString = tr("Порт занят другой программой.");
             break;
         default:
             m_errorString = m_port.errorString();
-            return false;
             break;
         }
     }
+
+    /*если порт открылся,
+     * очищаем буфер приёма/передачи
+     * очищаем буфер ошибок
+     * состояние порта переключаем в Idle(свободен)*/
+    m_buffer.clear();
+    m_errorString.clear();
+    m_state = State::Idle;
+
     return true;
 }
 
-void SerialLink::close(){
-    m_timer.stop();
-    if (m_port.isOpen()) {
+void SerialLink::close() // метод закрытия порта
+{
+    m_timer.stop(); // остановили таймер отвечающий за таймауты
+    if (m_port.isOpen()) { // если порт открыт закрываем (защита от двойного закрытия)
         m_port.close();
     }
-    m_buffer.clear();
-    m_state = State::Closed;
+    m_buffer.clear(); // чистим буфер приема/передачи
+    m_state = State::Closed; // выставляем состояние порта в Closed
 }
 
-bool SerialLink::isBusy() const {
-
+bool SerialLink::isBusy() const // метод определения в каком состоянии порт (занят или нет)
+{
     switch (m_state) {
     case State::Sending:
         return true;
-        break;
     case State::WaitingFirstByte:
         return true;
-        break;
     case State::Receiving:
         return true;
-        break;
-    default:
+    case State::Closed:
         return false;
-        break;
+    case State::Idle:
+        return false;
     }
+    return false;
 }
 
-QString SerialLink::errorString() const {
+QString SerialLink::errorString() const // метод возвращает ошибку порта
+{
     return m_errorString;
 }
 
