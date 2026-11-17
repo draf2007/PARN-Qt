@@ -9,6 +9,8 @@ qt_standard_project_setup()
 
 qt_add_executable(parn
     src/main.cpp
+    src/link/seriallink.h
+    src/link/seriallink.cpp
 )
 
 target_link_libraries(parn PRIVATE Qt6::Widgets Qt6::SerialPort)
