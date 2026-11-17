@@ -2,7 +2,10 @@
 
 SerialLink::SerialLink(QObject *parent)
     : QObject{parent}
-{}
+{
+    m_timer.setSingleShot(true);
+    QObject::connect(&m_timer, &QTimer::timeout, this, &SerialLink::onTimeout);
+}
 
 bool SerialLink::isOpen() const // метод проверяет открыт ли порт
 {
@@ -80,6 +83,28 @@ bool SerialLink::isBusy() const // метод определения в како
 QString SerialLink::errorString() const // метод возвращает ошибку порта
 {
     return m_errorString;
+}
+
+bool SerialLink::sendFrame(quint8 address, const QByteArray &body) // метод отправки кадра с адресом
+{
+    /*проверка что порт свободен, если не Idle то возвращаем false(порт занят)*/
+    if (m_state != State::Idle) {
+        return false;
+    }
+    m_buffer.clear(); // чистим буфер приёма/передачи
+    m_pendingBody = body; // сохраняем команду для отправки
+    m_state = State::Sending; // выставляем состояние порта в Sending (отправка)
+    m_port.setParity(QSerialPort::MarkParity); // меняем чётность согласно протоколу
+    QByteArray addr(1, static_cast<char>(address)); // делаем из адреса в quint8, массив символов
+    m_port.write(addr); // записываем адрес в порт
+    emit bytesSent(addr); // отправляем сигнал, что отправили в порт, в журнал
+    m_timer.start(ADDRESS_PAUSE_MS); // запускаем таймер для отправки адреса
+    return true;
+}
+
+void SerialLink::onTimeout()
+{
+
 }
 
 

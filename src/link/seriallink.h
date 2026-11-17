@@ -31,6 +31,9 @@ signals:
     void bytesSent(const QByteArray &data); // что ушло в порт для журнала
     void bytesReceived(const QByteArray &data); // что принято из порта для журнала
 
+private slots:
+    void onTimeout();
+
 private:
     /*Класс перечисления состояний порта*/
     enum class State{
@@ -46,6 +49,8 @@ private:
     QByteArray m_buffer; // Буфер для накопления ответа
     State m_state = State::Closed; // Состояние порта(при запуске программы всегда Close)
     QString m_errorString; // Содержит в себе текст ошибки
+    QByteArray m_pendingBody; // тело кадра, которое ждёт окончание таймаута
+
 };
 
 #endif // SERIALLINK_H
