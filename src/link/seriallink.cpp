@@ -5,6 +5,8 @@ SerialLink::SerialLink(QObject *parent)
 {
     m_timer.setSingleShot(true);
     QObject::connect(&m_timer, &QTimer::timeout, this, &SerialLink::onTimeout);
+    QObject::connect(&m_port, &QSerialPort::readyRead, this, &SerialLink::onReadyRead);
+    QObject::connect(&m_port, &QSerialPort::errorOccurred, this, &SerialLink::onPortErorr);
 }
 
 bool SerialLink::isOpen() const // метод проверяет открыт ли порт
@@ -126,6 +128,42 @@ void SerialLink::onTimeout() // метод проверяет m_state и в за
     }
 }
 
+void SerialLink::onReadyRead()
+{
+    const QByteArray data = m_port.readAll();
+    emit bytesReceived(data);
+
+    if (m_state == State::WaitingFirstByte) {
+        m_state = State::Receiving;
+        m_timer.start(FRAME_TIMEOUT_MS);
+    }
+
+    if (m_state != State::Receiving) {
+        return;
+    }
+
+    m_buffer.append(data);
+
+    if (m_buffer.size()<RESPONSE_SIZE) {
+        return;
+    }
+    m_timer.stop();
+    const QByteArray frame = m_buffer.left(RESPONSE_SIZE);
+    m_buffer.clear();
+    m_state = State::Idle;
+    emit frameReceived(frame);
+}
+
+void SerialLink::onPortErorr(QSerialPort::SerialPortError error)
+{
+    if (error == QSerialPort::NoError || m_state == State::Closed) {
+        return;
+    } else {
+        m_errorString = tr("Связь с портом потеряна");
+        close();
+        emit portError(m_errorString);
+    }
+}
 
 
 
